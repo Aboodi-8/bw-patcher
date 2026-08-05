@@ -74,6 +74,20 @@ class Mi5Patcher(LKS32Patcher):
 
         return ret
 
+    def speed_limit_ped(self, kmh: float):
+        speed = self._calc_speed(kmh, size=0)
+        if not 1 <= speed <= 0xff:
+            raise ValueError("Mi5 walking speed must be between 0.1 and 25.5 km/h")
+
+        sig = [0x89, 0x20, 0x10, 0x80, 0x3e, 0x20, 0xc8, 0x81]
+        ofs = find_pattern(self.data, sig) + 4
+        pre = self.data[ofs:ofs+2]
+        post = self.assembly(f"movs r0, #{speed}")
+        assert len(pre) == len(post)
+        self.data[ofs:ofs+2] = post
+
+        return [("speed_limit_ped", hex(ofs), pre.hex(), post.hex())]
+
     def remove_speed_limit_sport(self):
         return self.speed_limit_sport(kmh=36.7)
 

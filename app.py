@@ -155,30 +155,37 @@ patches = []
 
 # Speed limit patches
 if st.checkbox('Speed Limit Sport (SLS)'):
-    sls_speed = st.slider("Max Speed (SLS)", 1.0, 35.0, 25.0, 0.1)
+    sls_max = 45.0 if scooter_model == 'mi5' else 35.0
+    sls_speed = st.slider("Max Speed (SLS)", 1.0, sls_max, 25.0, 0.1)
     patches.append(f'sls={sls_speed}')
 
 if st.checkbox('Speed Limit Drive (SLD)'):
-    sld_speed = st.slider("Max Speed (SLD)", 1.0, 35.0, 15.0, 0.1)
+    sld_max = 45.0 if scooter_model == 'mi5' else 35.0
+    sld_speed = st.slider("Max Speed (SLD)", 1.0, sld_max, 15.0, 0.1)
     patches.append(f'sld={sld_speed}')
 
-if scooter_model in ['mi5elite']:
+if scooter_model in ['mi5', 'mi5elite', 'mi6']:
     if st.checkbox('Speed Limit Pedestrian (SLP)'):
-        slp_speed = st.slider("Max Speed (SLP)", 1.0, 35.0, 6.0, 0.1)
+        slp_max = 25.5 if scooter_model == 'mi5' else 35.0
+        slp_speed = st.slider("Max Speed (SLP)", 1.0, slp_max, 6.0, 0.1)
         patches.append(f'slp={slp_speed}')
+
+if scooter_model in ['mi5', 'mi6']:
+    if st.checkbox('Region Free (RFM)'):
+        patches.append('rfm')
 
 if scooter_model in ['mi4', 'ultra4']:
     if st.checkbox('Dashboard Max Speed (DMS)'):
         dms_speed = st.slider("Max Speed (DMS)", 1.0, 29.6, 22.0, 0.1)
         patches.append(f'dms={dms_speed}')
 
-if scooter_model not in ["mi4pro2nd", "mi5pro", "mi5elite"]:
+if scooter_model not in ["mi4pro2nd", "mi5pro", "mi5elite", "mi6"]:
     if st.checkbox('Fake Firmware Version (FDV)'):
         fdv_version = st.text_input("Firmware Version (4 digits)", value="0000", max_chars=4)
         if len(fdv_version) == 4 and fdv_version.isdigit():
             patches.append(f"fdv={fdv_version}")
 
-if scooter_model not in ["mi5elite"]:
+if scooter_model not in ["mi5elite", "mi6"]:
     if st.checkbox('Cruise Control Enable (CCE)'):
         patches.append("cce")
 
@@ -200,7 +207,7 @@ if uploaded_file is not None and patches:
     if not advanced_mode and patches[-1] != "chk":
         patches.append("chk")
 
-    if scooter_model in ["mi5elite"]:
+    if scooter_model in ["mi5elite", "mi6"]:
         patches.append("img")
 
     # Process button
