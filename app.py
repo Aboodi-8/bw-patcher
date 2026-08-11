@@ -48,6 +48,9 @@ st.markdown("""
 if 'disclaimer_accepted' not in st.session_state:
     st.session_state.disclaimer_accepted = False
 
+if 'mi5_experimental_enabled' not in st.session_state:
+    st.session_state.mi5_experimental_enabled = False
+
 if not st.session_state.disclaimer_accepted:
     st.title("⚠️ LEGAL DISCLAIMER - READ CAREFULLY")
 
@@ -151,6 +154,13 @@ scooter_model = st.selectbox(
     ALL_MODULES
 )
 
+if scooter_model == "mi6":
+    st.warning("""
+    ### Mi6 patches are experimental
+
+    These patches have not been tested on real Mi6 hardware and may damage or brick the scooter. Use them only if you understand the risk. You are responsible for anything that happens.
+    """)
+
 if uploaded_file and scooter_model:
     st.success(f"Ready to configure patches for {scooter_model}")
 
@@ -160,47 +170,49 @@ st.divider()
 st.subheader("🔧 Configure Patches")
 
 patches = []
+mi5_patches_available = scooter_model != "mi5" or st.session_state.mi5_experimental_enabled
 
-# Speed limit patches
-if st.checkbox('Speed Limit Sport (SLS)'):
-    sls_max = 45.0 if scooter_model == 'mi5' else 35.0
-    sls_speed = st.slider("Max Speed (SLS)", 1.0, sls_max, 25.0, 0.1)
-    patches.append(f'sls={sls_speed}')
+if mi5_patches_available:
+    # Speed limit patches
+    if st.checkbox('Speed Limit Sport (SLS)'):
+        sls_max = 45.0 if scooter_model == 'mi5' else 35.0
+        sls_speed = st.slider("Max Speed (SLS)", 1.0, sls_max, 25.0, 0.1)
+        patches.append(f'sls={sls_speed}')
 
-if st.checkbox('Speed Limit Drive (SLD)'):
-    sld_max = 45.0 if scooter_model == 'mi5' else 35.0
-    sld_speed = st.slider("Max Speed (SLD)", 1.0, sld_max, 15.0, 0.1)
-    patches.append(f'sld={sld_speed}')
+    if st.checkbox('Speed Limit Drive (SLD)'):
+        sld_max = 45.0 if scooter_model == 'mi5' else 35.0
+        sld_speed = st.slider("Max Speed (SLD)", 1.0, sld_max, 15.0, 0.1)
+        patches.append(f'sld={sld_speed}')
 
-if scooter_model in ['mi5', 'mi5elite', 'mi6']:
-    if st.checkbox('Speed Limit Pedestrian (SLP)'):
-        slp_max = 25.5 if scooter_model == 'mi5' else 35.0
-        slp_speed = st.slider("Max Speed (SLP)", 1.0, slp_max, 6.0, 0.1)
-        patches.append(f'slp={slp_speed}')
+    if scooter_model in ['mi5', 'mi5elite', 'mi6']:
+        if st.checkbox('Speed Limit Pedestrian (SLP)'):
+            slp_max = 25.5 if scooter_model == 'mi5' else 35.0
+            slp_speed = st.slider("Max Speed (SLP)", 1.0, slp_max, 6.0, 0.1)
+            patches.append(f'slp={slp_speed}')
 
-if scooter_model in ['mi5', 'mi6']:
-    if st.checkbox('Region Free (RFM)'):
-        patches.append('rfm')
+    if scooter_model in ['mi5', 'mi6']:
+        if st.checkbox('Region Free (RFM)'):
+            patches.append('rfm')
 
-if scooter_model in ['mi4', 'ultra4']:
-    if st.checkbox('Dashboard Max Speed (DMS)'):
-        dms_speed = st.slider("Max Speed (DMS)", 1.0, 29.6, 22.0, 0.1)
-        patches.append(f'dms={dms_speed}')
+    if scooter_model in ['mi4', 'ultra4']:
+        if st.checkbox('Dashboard Max Speed (DMS)'):
+            dms_speed = st.slider("Max Speed (DMS)", 1.0, 29.6, 22.0, 0.1)
+            patches.append(f'dms={dms_speed}')
 
-if scooter_model not in ["mi4pro2nd", "mi5pro", "mi5elite", "mi6"]:
-    if st.checkbox('Fake Firmware Version (FDV)'):
-        fdv_version = st.text_input("Firmware Version (4 digits)", value="0000", max_chars=4)
-        if len(fdv_version) == 4 and fdv_version.isdigit():
-            patches.append(f"fdv={fdv_version}")
+    if scooter_model not in ["mi4pro2nd", "mi5pro", "mi5elite", "mi6"]:
+        if st.checkbox('Fake Firmware Version (FDV)'):
+            fdv_version = st.text_input("Firmware Version (4 digits)", value="0000", max_chars=4)
+            if len(fdv_version) == 4 and fdv_version.isdigit():
+                patches.append(f"fdv={fdv_version}")
 
-if scooter_model not in ["mi5elite", "mi6"]:
-    if st.checkbox('Cruise Control Enable (CCE)'):
-        patches.append("cce")
+    if scooter_model not in ["mi5elite", "mi6"]:
+        if st.checkbox('Cruise Control Enable (CCE)'):
+            patches.append("cce")
 
-if scooter_model not in ["mi4", "mi4lite"]:
-    if st.checkbox('Motor Start Speed (MSS)'):
-        mss_speed = st.slider("Motor Start Speed (MSS)", 1.0, 9.0, 5.0, 0.1)
-        patches.append(f"mss={mss_speed}")
+    if scooter_model not in ["mi4", "mi4lite"]:
+        if st.checkbox('Motor Start Speed (MSS)'):
+            mss_speed = st.slider("Motor Start Speed (MSS)", 1.0, 9.0, 5.0, 0.1)
+            patches.append(f"mss={mss_speed}")
 
 
 # Summary and action section
@@ -249,3 +261,15 @@ elif not patches:
 # Footer
 st.divider()
 st.caption("For educational and research purposes only • CC-BY-NC-SA 4.0 • See LEGAL_DISCLAIMER.md")
+
+with st.expander("Build information"):
+    if not st.session_state.mi5_experimental_enabled:
+        st.caption("Untested Mi5 research options are hidden by default.")
+        if st.button("Enable experimental Mi5 patches", type="secondary"):
+            st.session_state.mi5_experimental_enabled = True
+            st.rerun()
+    else:
+        st.warning("Experimental Mi5 patches are enabled. They have not been tested on real hardware.")
+        if st.button("Hide experimental Mi5 patches", type="secondary"):
+            st.session_state.mi5_experimental_enabled = False
+            st.rerun()
