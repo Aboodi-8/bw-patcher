@@ -52,6 +52,8 @@ pip install -r requirements.txt
 
 This tool can modify various firmware parameters. The specific parameters available depend on the device model and firmware version.
 
+The experimental fork includes Mi5 Eco, Drive, and Sport current-limit sliders from 5 A to the stock 18 A ceiling. A separate bench-test unlock extends the range to 20 A. The current scaling was inferred from firmware analysis but has not been confirmed on real hardware. Values above 18 A exceed every stock Mi5 mode and may damage the controller, BMS, battery, wiring, or motor.
+
 **WARNING:** Modifying firmware parameters may alter device behavior, void warranties, and create legal liability. Users assume all responsibility.
 
 ## Usage

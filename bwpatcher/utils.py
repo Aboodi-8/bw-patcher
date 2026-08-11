@@ -41,6 +41,9 @@ patch_map = {
     "img": lambda patcher: patcher.create_full_image,
     "mss": lambda patcher: patcher.motor_start_speed,
     "cce": lambda patcher: patcher.cruise_control_enable,
+    "amp_eco": lambda patcher: patcher.current_limit_eco,
+    "amp_drive": lambda patcher: patcher.current_limit_drive,
+    "amp_sport": lambda patcher: patcher.current_limit_sport,
 }
 
 

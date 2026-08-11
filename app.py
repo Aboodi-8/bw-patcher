@@ -213,6 +213,39 @@ if scooter_model not in ["mi4", "mi4lite"]:
         mss_speed = st.slider("Motor Start Speed (MSS)", 1.0, 9.0, 5.0, 0.1)
         patches.append(f"mss={mss_speed}")
 
+if mi5_experimental_enabled:
+    if st.checkbox("Experimental Current Limits"):
+        st.error(
+            "Research only: these current values are inferred from firmware and have not "
+            "been tested on real hardware. The sliders stop at the stock Sport limit of 18 A."
+        )
+        extended_current = st.checkbox("Unlock 18-20 A Bench-Test Range")
+        current_max = 20.0 if extended_current else 18.0
+        if extended_current:
+            st.error(
+                "UNVERIFIED HIGH-CURRENT RANGE: values over 18 A exceed every stock Mi5 "
+                "mode and may damage the controller, BMS, battery, wiring or motor. "
+                "Use only on a secured test setup with recovery access and monitoring."
+            )
+            st.caption(
+                "Settings over 18.6 A are rounded to the nearest encodable value "
+                "(maximum difference about 0.07 A)."
+            )
+        eco_amps = st.slider(
+            "Eco Current Limit", 5.0, current_max, 10.0, 0.1, format="%.1f A"
+        )
+        drive_amps = st.slider(
+            "Drive Current Limit", 5.0, current_max, 12.0, 0.1, format="%.1f A"
+        )
+        sport_amps = st.slider(
+            "Sport Current Limit", 5.0, current_max, 18.0, 0.1, format="%.1f A"
+        )
+        patches.extend([
+            f"amp_eco={eco_amps}",
+            f"amp_drive={drive_amps}",
+            f"amp_sport={sport_amps}",
+        ])
+
 
 # Summary and action section
 st.divider()

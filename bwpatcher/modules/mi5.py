@@ -25,6 +25,9 @@ from bwpatcher.utils import find_pattern
 class Mi5Patcher(LKS32Patcher):
     SNS = [(0x84, 0xEC, 0x0, 0x0), (0xCD, 0xEE, 0x0, 0x0)]
     SIG_CCU = [0x12, 0x68, 0x91, 0x4b, 0x9a, 0x42, 0x1a, 0xd0]#, 0x62, 0x7a, 0x90, 0x4e, 0x00, 0x2a, 0x0e, 0xd0 ]
+    CURRENT_SCALE = 27.4
+    CURRENT_MIN_AMPS = 5.0
+    CURRENT_MAX_AMPS = 20.0
 
     def __init__(self, data):
         super().__init__(data)
@@ -90,6 +93,61 @@ class Mi5Patcher(LKS32Patcher):
 
     def remove_speed_limit_sport(self):
         return self.speed_limit_sport(kmh=36.7)
+
+    def _current_limit_raw(self, amps: float) -> int:
+        if not self.CURRENT_MIN_AMPS <= amps <= self.CURRENT_MAX_AMPS:
+            raise ValueError(
+                f"Mi5 current limit must be between {self.CURRENT_MIN_AMPS:.1f} "
+                f"and {self.CURRENT_MAX_AMPS:.1f} A"
+            )
+
+        return int(amps * self.CURRENT_SCALE)
+
+    def _patch_current_limit(self, amps: float, signature: list, register: str, name: str):
+        raw = self._current_limit_raw(amps)
+        ofs = find_pattern(self.data, signature) + 2
+        pre = self.data[ofs:ofs+4]
+        if raw <= 0x1fe:
+            first = min(raw, 0xff)
+            second = raw - first
+            post = self.assembly(
+                f"movs {register}, #{first}; adds {register}, #{second}"
+            )
+        else:
+            shifted = (raw + 2) // 4
+            post = self.assembly(
+                f"movs {register}, #{shifted}; lsls {register}, {register}, #2"
+            )
+        assert len(pre) == len(post) == 4
+        self.data[ofs:ofs+4] = post
+        return [(name, hex(ofs), pre.hex(), post.hex())]
+
+    def current_limit_eco(self, amps: float):
+        signature = [
+            0x48, 0x78, 0xff, 0x25, 0x13, 0x35,
+            0x42, 0x4a, 0x67, 0x24, 0x01, 0x28,
+        ]
+        return self._patch_current_limit(
+            amps, signature, "r5", "current_limit_eco"
+        )
+
+    def current_limit_drive(self, amps: float):
+        signature = [
+            0x08, 0xe0, 0xff, 0x20, 0x49, 0x30,
+            0x10, 0x80, 0x18, 0x88, 0x02, 0xe0,
+        ]
+        return self._patch_current_limit(
+            amps, signature, "r0", "current_limit_drive"
+        )
+
+    def current_limit_sport(self, amps: float):
+        signature = [
+            0x13, 0xe0, 0xff, 0x20, 0xee, 0x30,
+            0x10, 0x80, 0x58, 0x88, 0xf3, 0xe7,
+        ]
+        return self._patch_current_limit(
+            amps, signature, "r0", "current_limit_sport"
+        )
 
     def motor_start_speed(self, kmh):
         ret = []
